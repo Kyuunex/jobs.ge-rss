@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, make_response, redirect
 from feedgen.feed import FeedGenerator
+from datetime import datetime, date
+import time
 
 app = Flask(__name__)
 
@@ -44,6 +46,35 @@ def parse_data(html_content):
     return table_datae
 
 
+def convert_date(input_ge_str):
+    # TODO: check if the given date has happened yet or not
+    dictionary = {
+        "იანვარი": "01",
+        "თებერვალი": "02",
+        "მარტი": "03",
+        "აპრილი": "04",
+        "მაისი": "05",
+        "ივნისი": "06",
+        "ივლისი": "07",
+        "აგვისტო": "08",
+        "სექტემბერი": "09",
+        "ოქტომბერი": "10",
+        "ნოემბერი": "11",
+        "დეკემბერი": "12",
+    }
+
+    input_ge_list = input_ge_str.split(" ")
+
+    buffer = ""
+    buffer += str(date.today().year)
+    buffer += "-"
+    buffer += dictionary[input_ge_list[1]]
+    buffer += "-"
+    buffer += input_ge_list[0]
+
+    return buffer
+
+
 @app.route('/')
 @app.route('/<path:endpoint>')
 def gen_rss(endpoint=None):
@@ -72,8 +103,9 @@ def gen_rss(endpoint=None):
             feed_entry.link(href=row[0])
             feed_entry.title(row[1])
             feed_entry.author(name=row[2])
-            feed_entry.description(row[3] + " - " + row[4])
-            # feed_entry.pubDate()
+            feed_entry.description("ბოლო ვადა: " + row[4])
+            input_datetime = datetime.strptime(convert_date(row[3]) + "T00:00:00" + "+04:00", "%Y-%m-%dT%H:%M:%S%z")
+            feed_entry.pubDate(input_datetime)
             feed_entry.guid(row[0])
 
     response = make_response(feed.rss_str())
